@@ -40,5 +40,16 @@ namespace Telemedicine.API.Services
             if (user == null) return string.Empty;
             return user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? string.Empty;
         }
+
+        public string GetUserName()
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+            if (user == null) return "Unknown";
+            
+            // Try specific claim types or standard Name claim
+            return user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value 
+                ?? user.Claims.FirstOrDefault(c => c.Type == "name" || c.Type == "unique_name")?.Value 
+                ?? "User " + GetUserId();
+        }
     }
 }

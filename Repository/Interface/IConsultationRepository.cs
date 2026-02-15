@@ -12,21 +12,24 @@ namespace Telemedicine.API.Repository.Interface
         Task<ApiResponse<bool>> AddNoteAsync(AddNoteRequest request);
         Task<ApiResponse<bool>> EndSessionAsync(EndSessionRequest request);
 
-        // Phase 6: Workflow Overhaul
+
         Task<ApiResponse<IEnumerable<User>>> GetDoctorsAsync();
         Task<ApiResponse<int>> BookAppointmentAsync(int patientId, int doctorId, DateTime scheduledTime, string reason);
         Task<ApiResponse<RoomDetailsDto>> GetRoomDetailsAsync(Guid roomId);
         Task<ApiResponse<IEnumerable<dynamic>>> GetUserAppointmentsAsync(int userId, string role);
         Task<ApiResponse<IEnumerable<dynamic>>> GetChatHistoryAsync(Guid roomId);
 
-        // Phase 7: Doctor Availability
+
         Task<ApiResponse<bool>> SetDoctorAvailabilityAsync(int doctorId, SetAvailabilityDto request);
         Task<ApiResponse<List<AvailabilitySlotDto>>> GetDoctorAvailabilityAsync(int doctorId);
         Task<ApiResponse<bool>> DeleteDoctorAvailabilityAsync(int id, int doctorId);
 
-        // Phase 7: Summary
+
         Task<ApiResponse<List<NoteDto>>> GetConsultationNotesAsync(Guid roomId);
         Task<ApiResponse<bool>> AddRecommendationAsync(int doctorId, Guid roomId, string details);
         Task<ApiResponse<string>> GetRecommendationAsync(Guid roomId);
+
+
+        Task<ApiResponse<List<Appointment>>> GetDoctorAppointmentsAsync(int doctorId);
     }
 }

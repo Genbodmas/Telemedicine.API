@@ -21,5 +21,7 @@ namespace Telemedicine.API.Models
 
         [Required]
         public string Status { get; set; } = "Pending"; // Pending, Active, Completed
+
+        public string? Reason { get; set; }
     }
 }

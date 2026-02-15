@@ -27,20 +27,40 @@ namespace Telemedicine.API.Services
                     fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse(file.ContentType);
                     content.Add(fileContent, "file", file.FileName);
                     
-                    var response = await _httpClient.PostAsync(_uploadUrl, content);
-                    response.EnsureSuccessStatusCode();
-
-                    var jsonResponse = await response.Content.ReadAsStringAsync();
-                    using var doc = JsonDocument.Parse(jsonResponse);
-                    
-                    if (doc.RootElement.TryGetProperty("url", out var urlElement))
-                    {
-                        return urlElement.GetString() ?? string.Empty;
-                    }
-                    
-                    throw new Exception("Invalid response from upload service");
+                    return await SendRequestAsync(content);
                 }
             }
+        }
+
+        public async Task<string> UploadFileAsync(byte[] fileBytes, string fileName)
+        {
+            if (fileBytes == null || fileBytes.Length == 0)
+                throw new ArgumentException("File is empty");
+
+            using (var content = new MultipartFormDataContent())
+            {
+                var fileContent = new ByteArrayContent(fileBytes);
+                fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/pdf");
+                content.Add(fileContent, "file", fileName);
+
+                return await SendRequestAsync(content);
+            }
+        }
+
+        private async Task<string> SendRequestAsync(MultipartFormDataContent content)
+        {
+            var response = await _httpClient.PostAsync(_uploadUrl, content);
+            response.EnsureSuccessStatusCode();
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(jsonResponse);
+            
+            if (doc.RootElement.TryGetProperty("url", out var urlElement))
+            {
+                return urlElement.GetString() ?? string.Empty;
+            }
+            
+            throw new Exception("Invalid response from upload service");
         }
     }
 }

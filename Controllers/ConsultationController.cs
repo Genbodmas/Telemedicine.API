@@ -16,13 +16,42 @@ namespace Telemedicine.API.Controllers
         private readonly EncryptionService _encryptionService;
         private readonly FileUploadService _fileUploadService;
         private readonly IUserContextService _userContextService;
+        private readonly PdfService _pdfService;
 
-        public ConsultationController(IConsultationRepository repository, EncryptionService encryptionService, FileUploadService fileUploadService, IUserContextService userContextService)
+        public ConsultationController(IConsultationRepository repository, EncryptionService encryptionService, FileUploadService fileUploadService, IUserContextService userContextService, PdfService pdfService)
         {
             _repository = repository;
             _encryptionService = encryptionService;
             _fileUploadService = fileUploadService;
             _userContextService = userContextService;
+            _pdfService = pdfService;
+        }
+
+        [HttpPost("generate-pdf/{roomId}")]
+        public async Task<IActionResult> GeneratePdf(Guid roomId)
+        {
+
+            var roomRes = await _repository.GetRoomDetailsAsync(roomId);
+            if (!roomRes.Succeeded || roomRes.Data == null) return NotFound("Room not found");
+            
+            var details = roomRes.Data;
+
+
+            var recRes = await _repository.GetRecommendationAsync(roomId);
+            string recommendation = "No recommendation.";
+            if (recRes.Succeeded && recRes.Data != null)
+            {
+                 try { recommendation = _encryptionService.Decrypt(recRes.Data); } catch { recommendation = recRes.Data; }
+            }
+
+
+            var pdfBytes = _pdfService.GenerateConsultationSummary(details.DoctorName, details.PatientName, details.ScheduledTime, recommendation);
+
+
+            string fileName = $"Summary_{details.PatientName}_{details.ScheduledTime:yyyyMMdd}.pdf";
+            var url = await _fileUploadService.UploadFileAsync(pdfBytes, fileName);
+
+            return Ok(new { Url = url });
         }
 
         [HttpPost("start/{appointmentId}")]
@@ -47,7 +76,7 @@ namespace Telemedicine.API.Controllers
         {
             var doctorId = _userContextService.GetUserId();
             
-            // Resolve AppointmentId from RoomId
+
             var roomDetails = await _repository.GetRoomDetailsAsync(request.RoomId);
             if (!roomDetails.Succeeded || roomDetails.Data == null)
             {

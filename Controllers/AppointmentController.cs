@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Telemedicine.API.Hubs;
 using Telemedicine.API.Models;
 using Telemedicine.API.Models.Requests;
 using Telemedicine.API.Repository.Interface;
@@ -15,10 +17,13 @@ namespace Telemedicine.API.Controllers
         private readonly IConsultationRepository _repository;
         private readonly IUserContextService _userContext;
 
-        public AppointmentController(IConsultationRepository repository, IUserContextService userContext)
+        private readonly IHubContext<TelemedicineHub> _hubContext;
+
+        public AppointmentController(IConsultationRepository repository, IUserContextService userContext, IHubContext<TelemedicineHub> hubContext)
         {
             _repository = repository;
             _userContext = userContext;
+            _hubContext = hubContext;
         }
 
         [HttpGet("doctors")]
@@ -37,8 +42,13 @@ namespace Telemedicine.API.Controllers
         {
             var patientId = _userContext.GetUserId();
             var result = await _repository.BookAppointmentAsync(patientId, request.DoctorId, request.ScheduledTime, request.Reason);
+            
             if (!result.Succeeded)
                 return StatusCode(result.StatusCode, result);
+
+            // Notify Doctor via SignalR
+            await _hubContext.Clients.User(request.DoctorId.ToString()).SendAsync("ReceiveNotification", "New appointment booked!");
+            
             return Ok(result);
         }
 

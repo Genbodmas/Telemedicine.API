@@ -56,7 +56,8 @@ namespace Telemedicine.API.Hubs
 
             if (response.Succeeded)
             {
-                await Clients.Group(roomId.ToString()).SendAsync("ReceiveMessage", userId, message, fileUrl, DateTime.UtcNow);
+                var userName = _userContextService.GetUserName();
+                await Clients.Group(roomId.ToString()).SendAsync("ReceiveMessage", userId, userName, message, fileUrl, DateTime.UtcNow);
             }
             else
             {

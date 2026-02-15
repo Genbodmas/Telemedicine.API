@@ -341,7 +341,7 @@ namespace Telemedicine.API.Repository.Implementation
             }
         }
 
-        // Phase 7: Doctor Availability
+
         public async Task<ApiResponse<bool>> SetDoctorAvailabilityAsync(int doctorId, SetAvailabilityDto request)
         {
             try
@@ -539,6 +539,38 @@ namespace Telemedicine.API.Repository.Implementation
         {
             return ApiResponse<RoomDetailsDto>.Fail($"Error: {ex.Message}", 500);
         }
+        }
+        public async Task<ApiResponse<List<Appointment>>> GetDoctorAppointmentsAsync(int doctorId)
+        {
+            try
+            {
+                var appointments = new List<Appointment>();
+                using var conn = new SqlConnection(_connectionString);
+                await conn.OpenAsync();
+                
+                var query = "SELECT Id, PatientId, DoctorId, ScheduledTime, Status, Reason FROM tbl_Appointments WHERE DoctorId = @DoctorId";
+                using var cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@DoctorId", doctorId);
+
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    appointments.Add(new Appointment
+                    {
+                        Id = reader.GetInt32(0),
+                        PatientId = reader.GetInt32(1),
+                        DoctorId = reader.GetInt32(2),
+                        ScheduledTime = reader.GetDateTime(3),
+                        Status = reader.GetString(4),
+                        Reason = reader.IsDBNull(5) ? null : reader.GetString(5)
+                    });
+                }
+                return ApiResponse<List<Appointment>>.Success("Retrieved stats data", appointments);
+            }
+            catch (Exception ex)
+            {
+                 return ApiResponse<List<Appointment>>.Fail($"Error fetching analytics: {ex.Message}", 500);
+            }
+        }
     }
-}
 }

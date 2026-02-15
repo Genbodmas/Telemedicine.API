@@ -1,5 +1,4 @@
 -- =============================================
--- Phase 9: Logic Fixes (Pre-Room Status, etc)
 -- =============================================
 
 -- 1. SP: Join Room (Update Status to 'In Progress' when Doctor joins)

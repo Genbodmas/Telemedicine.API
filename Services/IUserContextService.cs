@@ -4,5 +4,6 @@ namespace Telemedicine.API.Services
     {
         int GetUserId();
         string GetUserRole();
+        string GetUserName();
     }
 }

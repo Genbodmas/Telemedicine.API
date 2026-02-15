@@ -44,7 +44,6 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<Telemedicine.API.Data.AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
@@ -79,11 +78,12 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Register Application Services
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<Telemedicine.API.Services.EncryptionService>();
 builder.Services.AddHttpClient<Telemedicine.API.Services.FileUploadService>();
+builder.Services.AddScoped<Telemedicine.API.Services.PdfService>(); // Register PdfService
 builder.Services.AddScoped<Telemedicine.API.Repository.Interface.IConsultationRepository, Telemedicine.API.Repository.Implementation.ConsultationRepository>();
+builder.Services.AddScoped<Telemedicine.API.Repository.Interface.IUserRepository, Telemedicine.API.Repository.Implementation.UserRepository>();
 builder.Services.AddScoped<Telemedicine.API.Services.IUserContextService, Telemedicine.API.Services.UserContextService>();
 builder.Services.AddSignalR();
 
@@ -99,6 +99,8 @@ builder.Services.AddCors(options =>
         });
 });
 
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -108,7 +110,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
     
-    // Seed Database
     using (var scope = app.Services.CreateScope())
     {
         var context = scope.ServiceProvider.GetRequiredService<Telemedicine.API.Data.AppDbContext>();
@@ -120,7 +121,11 @@ if (app.Environment.IsDevelopment())
         Telemedicine.API.SummaryMigration.Run(scope.ServiceProvider).Wait();
         Telemedicine.API.RecommendationsMigration.Run(scope.ServiceProvider).Wait();
         Telemedicine.API.BugFixesMigration.Run(scope.ServiceProvider).Wait();
+        Telemedicine.API.BugFixesMigration.Run(scope.ServiceProvider).Wait();
         Telemedicine.API.Phase9Migration.Run(scope.ServiceProvider).Wait();
+        
+        var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+        Telemedicine.API.Data.DatabaseMigrator.Migrate(config.GetConnectionString("DefaultConnection"));
     }
 }
 
