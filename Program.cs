@@ -120,6 +120,7 @@ if (app.Environment.IsDevelopment())
         Telemedicine.API.SummaryMigration.Run(scope.ServiceProvider).Wait();
         Telemedicine.API.RecommendationsMigration.Run(scope.ServiceProvider).Wait();
         Telemedicine.API.BugFixesMigration.Run(scope.ServiceProvider).Wait();
+        Telemedicine.API.Phase9Migration.Run(scope.ServiceProvider).Wait();
     }
 }
 

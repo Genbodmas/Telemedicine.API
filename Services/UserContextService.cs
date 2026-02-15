@@ -20,6 +20,12 @@ namespace Telemedicine.API.Services
             }
 
             var userIdClaim = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            // Fallback for different JWT mappers
+            if (userIdClaim == null)
+            {
+                userIdClaim = user.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == "id");
+            }
+
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
                 return userId;

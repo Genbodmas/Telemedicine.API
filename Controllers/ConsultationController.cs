@@ -42,6 +42,38 @@ namespace Telemedicine.API.Controllers
             return StatusCode(response.StatusCode, response.Message);
         }
 
+        [HttpPost("notes-room")]
+        public async Task<IActionResult> AddNoteByRoom([FromBody] AddNoteByRoomRequest request)
+        {
+            var doctorId = _userContextService.GetUserId();
+            
+            // Resolve AppointmentId from RoomId
+            var roomDetails = await _repository.GetRoomDetailsAsync(request.RoomId);
+            if (!roomDetails.Succeeded || roomDetails.Data == null)
+            {
+                return StatusCode(404, "Room not found");
+            }
+
+            var appointmentId = roomDetails.Data.AppointmentId;
+            var encryptedContent = _encryptionService.Encrypt(request.Content);
+
+            var addNoteRequest = new AddNoteRequest
+            {
+                AppointmentId = appointmentId,
+                DoctorId = doctorId,
+                Content = encryptedContent
+            };
+
+            var response = await _repository.AddNoteAsync(addNoteRequest);
+
+            if (response.Succeeded)
+            {
+                return Ok(response.Message);
+            }
+
+            return StatusCode(response.StatusCode, response.Message);
+        }
+
         [HttpPost("notes")]
         public async Task<IActionResult> AddNote([FromBody] NoteRequest requestDto)
         {
@@ -126,6 +158,14 @@ namespace Telemedicine.API.Controllers
                 catch {}
             }
             return Ok(result);
+        }
+
+        [HttpGet("history/{roomId}")]
+        public async Task<IActionResult> GetChatHistory(Guid roomId)
+        {
+            var result = await _repository.GetChatHistoryAsync(roomId);
+            if (result.Succeeded) return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpGet("room-details/{roomId}")]
